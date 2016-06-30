@@ -883,6 +883,8 @@ struct cgroup_subsys_state *cgroup_css_from_dir(struct file *f, int id);
 int subsys_cgroup_allow_attach(struct cgroup *cgrp,
 			       struct cgroup_taskset *tset);
 
+struct cgroup *cgroup_get_from_fd(int fd);
+
 void cgroup_sk_alloc(struct cgroup **skcg);
 void cgroup_sk_clone(struct cgroup *skcg);
 void cgroup_sk_free(struct cgroup *skcg);
