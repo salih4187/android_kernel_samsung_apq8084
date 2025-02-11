@@ -2888,19 +2888,6 @@ EXPORT_SYMBOL(get_zeroed_page);
 void __free_pages(struct page *page, unsigned int order)
 {
 	if (put_page_testzero(page)) {
-#ifdef CONFIG_TIMA_RKP_DEBUG
-	//TODO: Do the check for all pages if order > 0
-	if (((unsigned long)__va(page_to_phys(page))) < ((unsigned long) high_memory)){
-		if (tima_debug_page_protection((unsigned long)__va(page_to_phys(page)), 6, 0) == 1) {
-			tima_debug_signal_failure(0x3f80f221, 6);
-			//tima_send_cmd((unsigned long)__va(page_to_phys(page)), 0x3f80e221);
-			//printk(KERN_ERR"TIMA: Freed PAGE prtctd va %lx pa %lx caller %lx\n",
-			// (unsigned long)__va(page_to_phys(page)),
-			// (unsigned long) page_to_phys(page),
-			// (unsigned long)__builtin_return_address(0));
-		}
-	}
-#endif
 		if (order == 0)
 			free_hot_cold_page(page, 0);
 		else

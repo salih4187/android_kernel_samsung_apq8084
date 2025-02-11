@@ -212,9 +212,6 @@ static void __wrap_flush_cache_all(void* vp)
 }
 #endif
 
-#ifdef CONFIG_TIMA_LKMAUTH
-pid_t pid_from_lkm = -1;
-#endif
 static int __scm_call(const struct scm_command *cmd)
 {
 	int flush_all_need;
@@ -232,13 +229,6 @@ static int __scm_call(const struct scm_command *cmd)
 	*/
 	call_from_ss_daemon = (strncmp(current_thread_info()->task->comm, "secure_storage_daemon", TASK_COMM_LEN - 1) == 0);
 
-#ifdef CONFIG_TIMA_LKMAUTH
-	/* we just use the call_from_ss_daemon for simple code */
-	if (pid_from_lkm == current_thread_info()->task->pid) {
-		call_from_ss_daemon = 1;
-		printk(KERN_ERR "scm call by lkmauth\n");
-	}
-#endif
 	/*
 	 * Flush the command buffer so that the secure world sees
 	 * the correct data.

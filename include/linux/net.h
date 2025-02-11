@@ -115,8 +115,6 @@ struct socket {
 
 	struct file		*file;
 	struct sock		*sk;
-	uid_t			knox_uid;
-	pid_t			knox_pid;
 	const struct proto_ops	*ops;
 };
 

@@ -340,11 +340,6 @@ INSTALLKERNEL  := installkernel
 DEPMOD		= /sbin/depmod
 PERL		= perl
 CHECK		= sparse
-#ifeq ($(CONFIG_CRYPTO_FIPS),)
-#READELF	= $(CROSS_COMPILE)readelf
-#export READELF
-#cmd_fips_gen_hmac = $(CONFIG_SHELL) $(srctree)/scripts/fips_crypto_hmac.sh $(objtree)/vmlinux $(objtree)/System.map
-#endif
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)

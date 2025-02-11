@@ -2,9 +2,6 @@
 # Arch-specific CryptoAPI modules.
 #
 
-#Keep this at the top
-obj-$(CONFIG_CRYPTO_FIPS) += first_file_asm.o
-
 obj-$(CONFIG_CRYPTO_AES_ARM) += aes-arm.o
 obj-$(CONFIG_CRYPTO_AES_ARM_BS) += aes-arm-bs.o
 obj-$(CONFIG_CRYPTO_SHA1_ARM) += sha1-arm.o
@@ -30,6 +27,3 @@ $(src)/sha256-core.S_shipped: $(src)/sha256-armv4.pl
 	$(call cmd,perl)
 
 .PRECIOUS: $(obj)/aesbs-core.S $(obj)/sha256-core.S
-
-#Keep this at the bottom
-obj-$(CONFIG_CRYPTO_FIPS) += last_file_asm.o

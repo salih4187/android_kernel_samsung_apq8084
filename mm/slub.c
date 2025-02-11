@@ -34,20 +34,7 @@
 #include <linux/prefetch.h>
 #include <linux/memcontrol.h>
 
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-#include <linux/security.h>
-#endif /*CONFIG_TIMA_RKP_RO_CRED*/
-
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-#define check_cred_cache(s,r)			\
-do {							\
-	if ((s->name) && !strcmp(s->name,"cred_jar_ro"))	\
-		return r;		\
-} while (0)
-#else
 #define check_cred_cache(s,r)   
-#endif  /* CONFIG_TIMA_RKP_RO_CRED */
-
 
 #include <trace/events/kmem.h>
 
@@ -56,7 +43,6 @@ do {							\
 #ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
 #include <mach/sec_debug.h>
 #endif
-
 
 /*
  * Lock order:
@@ -142,82 +128,6 @@ static inline int kmem_cache_debug(struct kmem_cache *s)
 	return 0;
 #endif
 }
-
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-void v7_flush_kern_dcache_area(void *addr, size_t size);
-spinlock_t ro_pages_lock = __SPIN_LOCK_UNLOCKED();
-
-/* Array for tracking whether a given page is allocatedk*/
-/* First Page is allocated for init_credential */
-char ro_pages_stat[1 << RO_PAGES_ORDER] = { 1 };
-
-#if 0
-/* Test Code: To be removed*/
-/* Lets calculate whether we consume more than 1MB */
-void rkp_calc_max_threshold(void)
-{
-		unsigned int i,sum = 0;
-
-		for(i = 0;i < (1 << RO_PAGES_ORDER);i++) {
-				sum = sum + ro_pages_stat[i];
-		}
-		if(sum > 256 )
-				panic(" Consuming more than 1M ");
-}
-#endif
-
-/* Main Routine for allocating Read-Only Cred Pages*/
-struct page *alloc_ro_pages(int order)
-{
-	struct page *page = NULL;
-	unsigned long flags;
-	int i, j;
-
-	spin_lock_irqsave(&ro_pages_lock,flags);
-
-	for (i = 0; i <= (1 << RO_PAGES_ORDER) - (1 << order); i++) {
-		for (j = 0; j < (1 << order); j++)
-			if (ro_pages_stat[i + j])
-				break;
-		if (j == (1 << order))
-			break;  /* Allocation successful. */
-	}
-	if (i != (1 << RO_PAGES_ORDER) - (1 << order) + 1) {
-		/* Allocation successful. */
-		for (j = 0; j < (1 << order); j++)
-			ro_pages_stat[i + j] = 1;
-		printk(KERN_ERR"RKP RO CRED ALLOC -> order %x, %lx\n", order, ((unsigned long) __rkp_ro_start) + (i << 12));
-		page = virt_to_page(((unsigned long) __rkp_ro_start) + (i << 12));
-#if 0
-		// Test Code to be removed
-		rkp_calc_max_threshold();
-#endif
-	}
-	else {
-		panic(KERN_ERR"TIMA-RKP: RO cred alloc failed order %x - i %x - j %x\n", order, i, j);
-	}
-
-	spin_unlock_irqrestore(&ro_pages_lock,flags);
-
-	return page;
-}
-
-/* Main Routine for freeing Read-Only Cred Pages*/
-void free_ro_pages(struct page *page, int order)
-{
-	int i, j;
-	unsigned long flags;
-
-	spin_lock_irqsave(&ro_pages_lock,flags);
-
-	i = (page_to_phys(page) - __pa((unsigned long) __rkp_ro_start)) >> 12;
-	printk(KERN_ERR"RKP RO CRED FREE-> order %x address %p\n", order, __va(page_to_phys(page)));
-	for (j = 0; j < (1 << order); j++)
-		ro_pages_stat[i + j] = 0;
-
-	spin_unlock_irqrestore(&ro_pages_lock,flags);
-}
-#endif  /* CONFIG_TIMA_RKP_RO_CRED */
 
 /*
  * Issues still to be resolved:
@@ -366,17 +276,6 @@ static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
 
 static void set_freepointer(struct kmem_cache *s, void *object, void *fp)
 {
-
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	if (s->name && !strcmp(s->name, "cred_jar_ro")) {
-//#ifndef CONFIG_TIMA_RKP_COHERENT_TT
-		tima_cache_flush(((unsigned long) object) + ((unsigned long) s->offset));
-//#endif
-		tima_send_cmd3((unsigned long) object, (unsigned long) s->offset,
-			(unsigned long) fp, 0x3f844221);
-	}
-	else 
-#endif /*CONFIG_TIMA_RKP_RO_CRED*/
 	*(void **)(object + s->offset) = fp;
 }
 
@@ -948,13 +847,6 @@ static int check_slab(struct kmem_cache *s, struct page *page)
 		slab_err(s, page, "Not a valid slab page");
 		return 0;
 	}
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	/*
-	 * Skip this function for now
-         */
-	if (s->name && !strcmp(s->name, "cred_jar_ro")) 
-		return 1;
-#endif /*CONFIG_TIMA_RKP_RO_CRED*/
 	maxobj = order_objects(compound_order(page), s->size, s->reserved);
 	if (page->objects > maxobj) {
 		slab_err(s, page, "objects %u > max %u",
@@ -1335,15 +1227,11 @@ static unsigned long kmem_cache_flags(unsigned long object_size,
 	/*
 	 * Enable debugging if selected on the kernel commandline.
 	 */
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	return flags;
-#else
 	if (slub_debug && (!slub_debug_slabs || (name &&
 		!strncmp(slub_debug_slabs, name, strlen(slub_debug_slabs)))))
 		flags |= slub_debug;
 
 	return flags;
-#endif 
 }
 #else
 static inline void setup_object_debug(struct kmem_cache *s,
@@ -1427,15 +1315,6 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 	 */
 	alloc_gfp = (flags | __GFP_NOWARN | __GFP_NORETRY) & ~__GFP_NOFAIL;
 
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	/*
-	 * We modify the following so that slab alloc for protected data
-	 * types are allocated from our own pool.
-	 */
-	if (s->name && !strcmp(s->name, "cred_jar_ro")) {
-		page = alloc_ro_pages(oo_order(oo));
-	} else {
-#endif
 	page = alloc_slab_page(alloc_gfp, node, oo);
 	if (unlikely(!page)) {
 		oo = s->min;
@@ -1448,9 +1327,6 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 		if (page)
 			stat(s, ORDER_FALLBACK);
 	}
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	}
-#endif
 
 	if (kmemcheck_enabled && page
 		&& !(s->flags & (SLAB_NOTRACK | DEBUG_DEFAULT_FLAGS))) {
@@ -1526,9 +1402,6 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 	}
 	setup_object(s, page, last);
 	set_freepointer(s, last, NULL);
-#ifdef CONFIG_TIMA_RKP_30
-	tima_send_cmd3(page_to_phys(page), compound_order(page), 1, 0x3f826221);
-#endif
 	page->freelist = start;
 	page->inuse = page->objects;
 	page->frozen = 1;
@@ -1564,13 +1437,7 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 	page_mapcount_reset(page);
 	if (current->reclaim_state)
 		current->reclaim_state->reclaimed_slab += pages;
-	
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-	/* We free the protected pages here. */
-	if (s->name && !strcmp(s->name, "cred_jar_ro"))
-		free_ro_pages(page, order);
-	else
-#endif
+
 	__free_memcg_kmem_pages(page, order);
 }
 
@@ -1591,9 +1458,6 @@ static void rcu_free_slab(struct rcu_head *h)
 
 static void free_slab(struct kmem_cache *s, struct page *page)
 {
-#ifdef CONFIG_TIMA_RKP_30
-	tima_send_cmd3(page_to_phys(page), compound_order(page), 0, 0x3f826221);
-#endif
 	if (unlikely(s->flags & SLAB_DESTROY_BY_RCU)) {
 		struct rcu_head *head;
 
@@ -3767,10 +3631,8 @@ static struct kmem_cache * __init bootstrap(struct kmem_cache *static_cache)
 				p->slab_cache = s;
 
 #ifdef CONFIG_SLUB_DEBUG
-#ifndef CONFIG_TIMA_RKP_RO_CRED
 			list_for_each_entry(p, &n->full, lru)
 				p->slab_cache = s;
-#endif /*CONFIG_TIMA_RKP_RO_CRED*/
 #endif
 		}
 	}
