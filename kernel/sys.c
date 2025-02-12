@@ -56,9 +56,6 @@
 #include <linux/cred.h>
 
 #include <linux/kmsg_dump.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 /* Move somewhere else to avoid recompiling? */
 #include <generated/utsrelease.h>
 

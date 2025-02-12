@@ -47,9 +47,6 @@
 #include <linux/utsname.h>
 
 #include <asm/uaccess.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #ifdef CONFIG_SEC_LOG_LAST_KMSG
 #include <linux/io.h>
 #include <linux/proc_fs.h>
@@ -1775,17 +1772,6 @@ static void sec_log_add_on_bootup(void)
 	}
 }
 
-#ifdef CONFIG_SEC_DEBUG_SUBSYS
-void sec_debug_subsys_set_kloginfo(unsigned int *first_idx_paddr,
-	unsigned int *next_idx_paddr, unsigned int *log_paddr, unsigned int *size)
-{
-	*first_idx_paddr = (unsigned int)__pa(&log_first_idx); 
-	*next_idx_paddr = (unsigned int)__pa(&log_next_idx); 	
-	*log_paddr = (unsigned int)__pa(log_buf);
-	*size = __LOG_BUF_LEN;
-}
-#endif
-
 #ifdef CONFIG_SEC_LOG_LAST_KMSG
 static int __init sec_log_save_old(void)
 {
@@ -1824,23 +1810,6 @@ static int __init printk_remap_nocache(void)
 	int bOk=0;
 
 	sec_getlog_supply_kloginfo(log_buf);
-
-#ifndef CONFIG_SEC_DEBUG_NOCACHE_LOG_IN_LEVEL_LOW
-	if (0 == sec_debug_is_enabled()) {
-#ifdef CONFIG_SEC_DEBUG_LOW_LOG
-		nocache_base = ioremap_nocache(sec_log_save_base - 4096,
-		sec_log_save_size + 8192);
-		nocache_base = nocache_base + 4096;
-
-		sec_log_mag = nocache_base - 8;
-		sec_log_ptr = nocache_base - 4;
-		sec_log_buf = nocache_base;
-		sec_log_size = sec_log_save_size;
-		sec_log_irq_en = nocache_base - 0xC ;
-#endif
-		return rc;
-	}
-#endif /* CONFIG_SEC_DEBUG_NOCACHE_LOG_IN_LEVEL_LOW */
 
 #ifdef CONFIG_ARM_LPAE
 	pr_err("%s: sec_log_save_size %d at sec_log_save_base 0x%llx\n",

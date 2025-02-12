@@ -43,9 +43,6 @@
 #include "idle.h"
 #include "clock.h"
 #include "pm-boot.h"
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/trace_msm_low_power.h>
@@ -317,16 +314,8 @@ static bool __ref msm_pm_spm_power_collapse(
 
 	msm_jtag_save_state();
 
-#ifdef CONFIG_SEC_DEBUG
-	secdbg_sched_msg("+pc(I:%d,R:%d)", from_idle, notify_rpm);
-#endif
-
 	collapsed = save_cpu_regs ?
 		!cpu_suspend(0, msm_pm_collapse) : msm_pm_pc_hotplug();
-
-#ifdef CONFIG_SEC_DEBUG
-	secdbg_sched_msg("-pc(%d)", collapsed);
-#endif
 
 	if (save_cpu_regs) {
 		spin_lock(&cpu_cnt_lock);

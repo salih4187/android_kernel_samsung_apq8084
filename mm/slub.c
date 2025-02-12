@@ -40,10 +40,6 @@
 
 #include "internal.h"
 
-#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
-#include <mach/sec_debug.h>
-#endif
-
 /*
  * Lock order:
  *   1. slab_mutex (Global Mutex)
@@ -3378,23 +3374,10 @@ out_unlock:
 EXPORT_SYMBOL(verify_mem_not_deleted);
 #endif
 
-#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
-void kfree(const void *y)
-#else
 void kfree(const void *x)
-#endif
 {
 	struct page *page;
-#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
-	void *x = (void *)y;
-#endif
 	void *object = (void *)x;
-
-#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
-	object = x = kfree_hook(x, __builtin_return_address(0));
-	if (!x)
-		return;
-#endif
 
 	trace_kfree(_RET_IP_, x);
 

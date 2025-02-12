@@ -24,9 +24,6 @@
 #include <linux/log2.h>
 #include <linux/qpnp/power-on.h>
 
-#if defined(CONFIG_SEC_DEBUG)
-#include <mach/sec_debug.h>
-#endif
 extern struct class *sec_class;
 
 /* Common PNP defines */
@@ -527,10 +524,6 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	}
 #endif
 
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_check_crash_key(cfg->key_code, key_status);
-#endif
-
 	cfg->old_state = !!key_status;
 
 	return 0;
@@ -813,18 +806,6 @@ qpnp_config_reset(struct qpnp_pon *pon, struct qpnp_pon_config *cfg)
 		dev_err(&pon->spmi->dev, "Unable to configure S2 timer\n");
 		return rc;
 	}
-
-#ifdef CONFIG_SEC_DEBUG
-	/* Configure reset type:
-	 * Debug level MID/HIGH: WARM Reset
-	 * Debug level LOW: HARD Reset
-	 */
-	if (sec_debug_is_enabled()) {
-		cfg->s2_type = 1;
-	} else {
-		cfg->s2_type = 8;	/* 7: Hard reset, 8: dVdd Hard reset */
-	}
-#endif
 
 	rc = qpnp_pon_masked_write(pon, cfg->s2_cntl_addr,
 				QPNP_PON_S2_CNTL_TYPE_MASK, (u8)cfg->s2_type);

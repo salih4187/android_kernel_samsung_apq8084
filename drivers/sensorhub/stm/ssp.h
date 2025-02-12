@@ -50,11 +50,6 @@
 #endif
 
 #define SSP_DBG		1
-#ifdef CONFIG_SEC_DEBUG
-#define SSP_SEC_DEBUG	1
-#else
-#define SSP_SEC_DEBUG	0
-#endif
 #define SUCCESS		1
 #define FAIL		0
 #define ERROR		-1

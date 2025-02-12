@@ -31,9 +31,6 @@
 #include <linux/spinlock.h>
 #include <linux/wakelock.h>
 
-#if defined(CONFIG_SEC_DEBUG)
-#include <mach/sec_debug.h>
-#endif
 #include <linux/sec_class.h>
 
 #if defined(CONFIG_SENSORS_HALL)
@@ -353,7 +350,6 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	 */
 	static int home_old_state;
 
-
 	if (button->code == KEY_HOMEPAGE) {
 		if (!home_old_state && !state && key_irq_state ) {
 			pr_info("[KEY] Force press home old state(%d), state(%d)\n", home_old_state, state);
@@ -365,10 +361,7 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	key_irq_state = 0;
 	
 	pr_info("[KEY] code(0x%02X), value(%d)\n", button->code, state);
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_check_crash_key(button->code, state);
-#endif
-	
+
 	if (type == EV_ABS) {
 		if (state)
 			input_event(input, type, button->code, button->value);

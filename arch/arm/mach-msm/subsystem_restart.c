@@ -38,9 +38,6 @@
 #include <soc/qcom/subsystem_notif.h>
 #include <soc/qcom/socinfo.h>
 #include <soc/qcom/sysmon.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #include <asm/current.h>
 
 static int enable_debug;
@@ -865,27 +862,6 @@ int subsystem_restart_dev(struct subsys_device *dev)
 	}
 
 	name = dev->desc->name;
-#ifdef CONFIG_SEC_DEBUG
-#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
-	if (!sec_debug_is_enabled_for_ssr())
-#else
-	if (!sec_debug_is_enabled())
-#endif
-	{
-		pr_info("[%s]: SSR start. crash:[%s]\n",__func__,name);
-		/* ADSP cannot work properly after ADSP SSR. So restart SOC. */
-		if (!strcmp("adsp", name))
-#ifdef CONFIG_SEC_LENTIS_PROJECT
-			dev->restart_level = RESET_SUBSYS_COUPLED;
-#else
-			dev->restart_level = RESET_SOC;
-#endif
-		else
-			dev->restart_level = RESET_SUBSYS_COUPLED; //Why is it delete the RESET_SUBSYS_INDEPENDENT on MSM8974 ?
-	}
-	else
-		dev->restart_level = RESET_SOC;
-#endif
 	/*
 	 * If a system reboot/shutdown is underway, ignore subsystem errors.
 	 * However, print a message so that we know that a subsystem behaved

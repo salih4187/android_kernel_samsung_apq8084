@@ -38,13 +38,6 @@
 #include "timer.h"
 #include "wdog_debug.h"
 
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#include <linux/notifier.h>
-#include <linux/ftrace.h>
-#endif
-
-
 #define WDT0_RST	0x38
 #define WDT0_EN		0x40
 #define WDT0_BARK_TIME	0x4C
@@ -100,10 +93,6 @@ void set_dload_mode(int on)
 		       dload_mode_addr + sizeof(unsigned int));
 		mb();
 		dload_mode_enabled = on;
-#ifdef CONFIG_SEC_DEBUG
-		pr_err("set_dload_mode <%d> ( %x )\n", on,
-					(unsigned int) CALLER_ADDR0);
-#endif		
 	}
 }
 
@@ -224,9 +213,7 @@ static void msm_restart_prepare(const char *cmd)
 {
 	unsigned long value;
 
-#ifndef CONFIG_SEC_DEBUG
 #ifdef CONFIG_MSM_DLOAD_MODE
-
 	/* This looks like a normal reboot at this point. */
 	set_dload_mode(0);
 
@@ -240,24 +227,6 @@ static void msm_restart_prepare(const char *cmd)
 	/* Kill download mode if master-kill switch is set */
 	if (!download_mode)
 		set_dload_mode(0);
-#endif
-#endif
-
-#ifdef CONFIG_SEC_DEBUG_LOW_LOG
-#ifdef CONFIG_MSM_DLOAD_MODE
-#ifdef CONFIG_SEC_DEBUG
-	if (sec_debug_is_enabled()
-	&& ((restart_mode == RESTART_DLOAD) || in_panic))
-		set_dload_mode(1);
-	else
-		set_dload_mode(0);
-#else
-	set_dload_mode(0);
-	set_dload_mode(in_panic);
-	if (restart_mode == RESTART_DLOAD)
-		set_dload_mode(1);
-#endif
-#endif
 #endif
 
 	pm8xxx_reset_pwr_off(1);
@@ -304,10 +273,6 @@ static void msm_restart_prepare(const char *cmd)
 			unsigned long code;
 			code = simple_strtoul(cmd + 4, NULL, 16) & 0xff;
 			__raw_writel(0x6f656d00 | code, restart_reason);
-#ifdef CONFIG_SEC_DEBUG
-		} else if (!strncmp(cmd, "sec_debug_hw_reset", 18)) {
-			__raw_writel(0x776655ee, restart_reason);
-#endif
 		} else if (!strncmp(cmd, "download", 8)) {
 		    __raw_writel(0x12345671, restart_reason);
 		} else if (!strncmp(cmd, "sud", 3)) {
@@ -320,11 +285,6 @@ static void msm_restart_prepare(const char *cmd)
 		} else if (!strncmp(cmd, "debug", 5)
 				&& !kstrtoul(cmd + 5, 0, &value)) {
 			__raw_writel(0xabcd0000 | value, restart_reason);
-#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
-		} else if (!strncmp(cmd, "cpdebug", 7) /* set cp debug level */
-				&& !kstrtoul(cmd + 7, 0, &value)) {
-			__raw_writel(0xfedc0000 | value, restart_reason);
-#endif
 #if defined(CONFIG_SWITCH_DUAL_MODEM) || defined(CONFIG_MUIC_SUPPORT_RUSTPROOF)
 		} else if (!strncmp(cmd, "swsel", 5) /* set switch value */
 				&& !kstrtoul(cmd + 5, 0, &value)) {
@@ -344,12 +304,6 @@ static void msm_restart_prepare(const char *cmd)
 			__raw_writel(0x77665501, restart_reason);
 		}
 	} 
-#ifdef CONFIG_SEC_DEBUG	
-	else {
-			pr_notice("%s : clear reset flag.\n",__func__);
-			__raw_writel(0x12345678, restart_reason);
-	}
-#endif
 
 	flush_cache_all();
 	outer_flush_all();
@@ -369,19 +323,6 @@ void msm_restart(char mode, const char *cmd)
 	mdelay(10000);
 	printk(KERN_ERR "Restarting has failed\n");
 }
-
-#ifdef CONFIG_SEC_DEBUG
-static int dload_mode_normal_reboot_handler(struct notifier_block *nb,
-				unsigned long l, void *p)
-{
-	set_dload_mode(0);
-	return 0;
-}
-
-static struct notifier_block dload_reboot_block = {
-	.notifier_call = dload_mode_normal_reboot_handler
-};
-#endif
 
 static int __init msm_restart_init(void)
 {
@@ -416,14 +357,6 @@ static int __init msm_restart_init(void)
 		goto err_edl_mode;
 	}
 
-#ifdef CONFIG_SEC_DEBUG
-	register_reboot_notifier(&dload_reboot_block);
-#endif
-#ifdef CONFIG_SEC_DEBUG_LOW_LOG
-	if (!sec_debug_is_enabled()) {
-		set_dload_mode(0);
-	} else
-#endif
 	set_dload_mode(download_mode);
 #endif
 	msm_tmr0_base = msm_timer_get_timer0_base();

@@ -36,9 +36,6 @@
 #include "board-dt.h"
 #include "clock.h"
 #include "platsmp.h"
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 
 #ifdef CONFIG_PROC_AVC
 #include <linux/proc_avc.h>
@@ -480,10 +477,6 @@ static void __init apq8084_map_io(void)
 void __init apq8084_init(void)
 {
 	struct of_dev_auxdata *adata = apq8084_auxdata_lookup;
-
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_init();
-#endif
 
 #ifdef CONFIG_PROC_AVC
 	sec_avc_log_init();

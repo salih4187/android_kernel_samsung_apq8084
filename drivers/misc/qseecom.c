@@ -42,9 +42,6 @@
 #include <mach/msm_bus_board.h>
 #include <mach/qseecomi.h>
 #include <asm/cacheflush.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #include "qseecom_legacy.h"
 #include "qseecom_kernel.h"
 
@@ -4723,9 +4720,6 @@ static int qseecom_probe(struct platform_device *pdev)
 				req.qsee_cmd_id = QSEOS_APP_REGION_NOTIFICATION;
 				req.addr = resource->start;
 				req.size = resource_size(resource);
-#ifdef CONFIG_SEC_DEBUG
-				sec_debug_secure_app_addr_size(req.addr, req.size);
-#endif
 				pr_warn("secure app region addr=0x%x size=0x%x",
 							req.addr, req.size);
 			} else {
