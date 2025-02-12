@@ -1810,7 +1810,6 @@ struct dx_hash_info
  */
 #define HASH_NB_ALWAYS		1
 
-
 /*
  * Describe an inode's exact location on disk and in memory
  */
@@ -2215,12 +2214,7 @@ extern int search_dir(struct buffer_head *bh,
 		      struct inode *dir,
 		      const struct qstr *d_name,
 		      unsigned int offset,
-#ifdef CONFIG_SDCARD_FS_CI_SEARCH
-		      struct ext4_dir_entry_2 **res_dir,
-		      char *ci_name_buf);
-#else
 		      struct ext4_dir_entry_2 **res_dir);
-#endif
 extern int ext4_generic_delete_entry(handle_t *handle,
 				     struct inode *dir,
 				     struct ext4_dir_entry_2 *de_del,
@@ -2710,7 +2704,6 @@ static inline void ext4_set_de_type(struct super_block *sb,
 	if (EXT4_HAS_INCOMPAT_FEATURE(sb, EXT4_FEATURE_INCOMPAT_FILETYPE))
 		de->file_type = ext4_type_by_mode[(mode & S_IFMT)>>S_SHIFT];
 }
-
 
 /* symlink.c */
 extern const struct inode_operations ext4_symlink_inode_operations;

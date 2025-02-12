@@ -61,8 +61,6 @@ struct attribute_group {
 	struct attribute	**attrs;
 };
 
-
-
 /**
  * Use these macros to make defining attributes easier. See include/linux/device.h
  * for examples..
@@ -146,10 +144,6 @@ int __must_check sysfs_create_files(struct kobject *kobj,
 				   const struct attribute **attr);
 int __must_check sysfs_chmod_file(struct kobject *kobj,
 				  const struct attribute *attr, umode_t mode);
-#if defined(CONFIG_MMC_BKOPS_NODE_UID) || defined(CONFIG_MMC_BKOPS_NODE_GID)
-int __must_check sysfs_chown_file(struct kobject *kobj, 
-				  const struct attribute *attr, uid_t uid, gid_t gid);
-#endif
 void sysfs_remove_file(struct kobject *kobj, const struct attribute *attr);
 void sysfs_remove_files(struct kobject *kobj, const struct attribute **attr);
 

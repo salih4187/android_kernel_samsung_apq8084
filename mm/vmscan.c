@@ -56,10 +56,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
 
-#ifdef CONFIG_INCREASE_MAXIMUM_SWAPPINESS
-int max_swappiness = 200;
-#endif
-
 struct scan_control {
 	/* Incremented by the number of inactive pages that were scanned */
 	unsigned long nr_scanned;
@@ -1189,11 +1185,6 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 			mem_cgroup_update_lru_size(lruvec, lru, -nr_pages);
 			list_move(&page->lru, dst);
 			nr_taken += nr_pages;
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-			if (is_cma_pageblock(page))
-				__mod_zone_page_state(page_zone(page),
-					NR_FREE_CMA_PAGES + 1 + lru, -1);
-#endif
 			break;
 
 		case -EBUSY:
@@ -1522,9 +1513,6 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 	unsigned long pgmoved = 0;
 	struct page *page;
 	int nr_pages;
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-	unsigned long nr_cma = 0;
-#endif
 
 	while (!list_empty(list)) {
 		page = lru_to_page(list);
@@ -1537,10 +1525,6 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 		mem_cgroup_update_lru_size(lruvec, lru, nr_pages);
 		list_move(&page->lru, &lruvec->lists[lru]);
 		pgmoved += nr_pages;
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-		if (is_cma_pageblock(page))
-			nr_cma++;
-#endif
 
 		if (put_page_testzero(page)) {
 			__ClearPageLRU(page);
@@ -1556,9 +1540,6 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 		}
 	}
 	__mod_zone_page_state(zone, NR_LRU_BASE + lru, pgmoved);
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-	__mod_zone_page_state(zone, NR_FREE_CMA_PAGES + 1 + lru, nr_cma);
-#endif
 
 	if (!is_active_lru(lru))
 		__count_vm_events(PGDEACTIVATE, pgmoved);
@@ -1866,11 +1847,7 @@ static void get_scan_count(struct lruvec *lruvec, struct scan_control *sc,
 	 * This scanning priority is essentially the inverse of IO cost.
 	 */
 	anon_prio = vmscan_swappiness(sc);
-#ifdef CONFIG_INCREASE_MAXIMUM_SWAPPINESS
-	file_prio = max_swappiness - anon_prio;
-#else
 	file_prio = 200 - anon_prio;
-#endif
 
 	/*
 	 * OK, so we have swap space and a fair amount of page cache
@@ -2521,11 +2498,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.may_writepage = !laptop_mode,
 		.nr_to_reclaim = SWAP_CLUSTER_MAX,
 		.may_unmap = 1,
-#ifdef CONFIG_DIRECT_RECLAIM_FILE_PAGES_ONLY
-		.may_swap = 0,
-#else
 		.may_swap = 1,
-#endif
 #ifdef CONFIG_ZSWAP
 		.swappiness = vm_swappiness / 2,
 #else
@@ -2733,11 +2706,7 @@ static bool pgdat_balanced(pg_data_t *pgdat, int order, int classzone_idx)
 	}
 
 	if (order)
-#ifdef CONFIG_TIGHT_PGDAT_BALANCE
-		return balanced_pages >= (managed_pages >> 1);
-#else
 		return balanced_pages >= (managed_pages >> 2);
-#endif
 	else
 		return true;
 }

@@ -1454,17 +1454,6 @@ void free_hot_cold_page(struct page *page, int cold)
 	unsigned long flags;
 	int migratetype;
 
-#ifdef CONFIG_SCFS_LOWER_PAGECACHE_INVALIDATION
-	/*
-	   struct scfs_sb_info *sbi;
-
-	   if (PageScfslower(page) || PageNocache(page)) {
-	   sbi = SCFS_S(page->mapping->host->i_sb);
-	   sbi->scfs_lowerpage_reclaim_count++;
-	   }
-	 */
-#endif
-
 	if (!free_pages_prepare(page, 0))
 		return;
 
@@ -3185,12 +3174,7 @@ void show_free_areas(unsigned int filter)
 		" dirty:%lu writeback:%lu unstable:%lu\n"
 		" free:%lu slab_reclaimable:%lu slab_unreclaimable:%lu\n"
 		" mapped:%lu shmem:%lu pagetables:%lu bounce:%lu\n"
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-		" free_cma:%lu cma_active_anon:%lu cma_inactive_anon:%lu\n"
-		" cma_active_file:%lu cma_inactive_file:%lu\n",
-#else
 		" free cma:%lu\n",
-#endif
 		global_page_state(NR_ACTIVE_ANON),
 		global_page_state(NR_INACTIVE_ANON),
 		global_page_state(NR_ISOLATED_ANON),
@@ -3208,15 +3192,7 @@ void show_free_areas(unsigned int filter)
 		global_page_state(NR_SHMEM),
 		global_page_state(NR_PAGETABLE),
 		global_page_state(NR_BOUNCE),
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-		global_page_state(NR_FREE_CMA_PAGES),
-		global_page_state(NR_CMA_ACTIVE_ANON),
-		global_page_state(NR_CMA_INACTIVE_ANON),
-		global_page_state(NR_CMA_ACTIVE_FILE),
-		global_page_state(NR_CMA_INACTIVE_FILE));
-#else
 		global_page_state(NR_FREE_CMA_PAGES));
-#endif
 
 	for_each_populated_zone(zone) {
 		int i;
@@ -3250,13 +3226,6 @@ void show_free_areas(unsigned int filter)
 			" unstable:%lukB"
 			" bounce:%lukB"
 			" free_cma:%lukB"
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-			" cma_active_anon:%lukB"
-			" cma_inactive_anon:%lukB"
-			" cma_active_file:%lukB"
-			" cma_inactive_file:%lukB"
-			" cma_unevictable:%lukB"
-#endif
 			" writeback_tmp:%lukB"
 			" pages_scanned:%lu"
 			" all_unreclaimable? %s"
@@ -3288,13 +3257,6 @@ void show_free_areas(unsigned int filter)
 			K(zone_page_state(zone, NR_UNSTABLE_NFS)),
 			K(zone_page_state(zone, NR_BOUNCE)),
 			K(zone_page_state(zone, NR_FREE_CMA_PAGES)),
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-			K(zone_page_state(zone, NR_CMA_ACTIVE_ANON)),
-			K(zone_page_state(zone, NR_CMA_INACTIVE_ANON)),
-			K(zone_page_state(zone, NR_CMA_ACTIVE_FILE)),
-			K(zone_page_state(zone, NR_CMA_INACTIVE_FILE)),
-			K(zone_page_state(zone, NR_CMA_UNEVICTABLE)),
-#endif
 			K(zone_page_state(zone, NR_WRITEBACK_TEMP)),
 			zone->pages_scanned,
 			(!zone_reclaimable(zone) ? "yes" : "no")
@@ -5638,9 +5600,6 @@ void setup_per_zone_wmarks(void)
  */
 static void __meminit calculate_zone_inactive_ratio(struct zone *zone)
 {
-#ifdef CONFIG_FIX_INACTIVE_RATIO
-	zone->inactive_ratio = 1;
-#else
 	unsigned int gb, ratio;
 
 	/* Zone size in gigabytes */
@@ -5651,7 +5610,6 @@ static void __meminit calculate_zone_inactive_ratio(struct zone *zone)
 		ratio = 1;
 
 	zone->inactive_ratio = ratio;
-#endif
 }
 
 static void __meminit setup_per_zone_inactive_ratio(void)
@@ -6452,10 +6410,6 @@ static const struct trace_print_flags pageflag_names[] = {
 #endif
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	{1UL << PG_compound_lock,	"compound_lock"	},
-#endif
-#ifdef CONFIG_SCFS_LOWER_PAGECACHE_INVALIDATION
-	{1UL << PG_scfslower, "scfslower"},
-	{1UL << PG_nocache,"nocache"},
 #endif
 	{1UL << PG_readahead,           "PG_readahead"  },
 };

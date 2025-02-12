@@ -328,17 +328,7 @@ static struct task_struct *select_bad_process(unsigned int *ppoints,
 		chosen_points = points;
 	}
 	if (chosen)
-	{
-#ifdef CONFIG_OOM_SCAN_SKIP_SEARCH_THREAD
-		if(chosen->pid != chosen->tgid ) {
-			pr_warning("%s is selected: pid=%d, tgid=%d, "
-				"oom_score_adj=%hd\n",
-				chosen->comm, chosen->pid, chosen->tgid,
-				chosen->signal->oom_score_adj);
-		}
-#endif
 		get_task_struct(chosen);
-	}
 	rcu_read_unlock();
 
 	*ppoints = chosen_points * 1000 / totalpages;

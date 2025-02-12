@@ -322,12 +322,6 @@ config CNSS_SECURE_FW
 	  The Memory Allocation is done only if this Config Parameter is
 	  enabled
 
-config FW_LOGS_BASED_ON_INI
-	tristate "CNSS change default fw log level based on ini"
-	depends on CNSS
-	---help---
-	  If set this configuration, FW log level will be set by ini configuration file.
-
 config WCNSS_CORE_PRONTO
 	tristate "Qualcomm WCNSS Pronto Support"
 	depends on WCNSS_CORE
